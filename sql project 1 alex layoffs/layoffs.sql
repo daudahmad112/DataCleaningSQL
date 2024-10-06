@@ -185,6 +185,110 @@ ALTER TABLE layoffs_staging2
 DROP COLUMN row_num;
 
 
+-- EXPLORATORY DATA ANALYSIS --
+-- ----- BEGIN HERE ---------
+
+SELECT MAX(total_laid_off)
+FROM layoffs_staging2;
+
+SELECT *
+FROM layoffs_staging2
+WHERE percentage_laid_off=1
+ORDER BY total_laid_off DESC;
+
+SELECT *
+FROM layoffs_staging2
+ORDER BY total_laid_off DESC
+LIMIT 5;
+
+SELECT company, SUM(total_laid_off), total_laid_off
+FROM layoffs_staging2
+GROUP BY company
+ORDER BY 2 DESC;
+
+SELECT company, SUM(total_laid_off), MIN(`date`), MAX(`date`)
+FROM layoffs_staging2
+GROUP BY company
+ORDER BY 2 DESC;
+
+SELECT industry, SUM(total_laid_off), MIN(`date`), MAX(`date`)
+FROM layoffs_staging2
+GROUP BY industry
+ORDER BY 2 DESC;
+
+SELECT country, SUM(total_laid_off), MIN(`date`), MAX(`date`)
+FROM layoffs_staging2
+GROUP BY country
+ORDER BY 2 DESC;
+
+SELECT YEAR(`date`), SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY YEAR(`date`)
+ORDER BY 2 DESC;
+
+SELECT stage, SUM(total_laid_off), MIN(`date`), MAX(`date`)
+FROM layoffs_staging2
+GROUP BY stage
+ORDER BY 2 DESC;
+
+
+SELECT stage, SUM(total_laid_off), MIN(`date`), MAX(`date`)
+FROM layoffs_staging2
+GROUP BY stage
+ORDER BY 2 DESC;
+
+
+-- rolling total layoffs
+
+SELECT SUBSTRING(`date`,1,7) AS `MONTH`, SUM(total_laid_off)
+FROM layoffs_staging2
+WHERE SUBSTRING(`date`,1,7) IS NOT NULL
+GROUP BY `MONTH`
+ORDER BY 1;
+
+
+WITH Rolling_Total AS (
+	SELECT SUBSTRING(`date`,1,7) AS `MONTH`, SUM(total_laid_off) AS sum_laid_off
+	FROM layoffs_staging2
+	WHERE SUBSTRING(`date`,1,7) IS NOT NULL
+	GROUP BY `MONTH`
+	ORDER BY 1
+)
+SELECT `MONTH`, sum_laid_off, SUM(sum_laid_off) OVER(ORDER BY `Month`) AS rolling_total_laid_off
+FROM Rolling_Total;
+
+SELECT company, YEAR(`date`) , SUM(total_laid_off)
+FROM layoffs_staging2
+GROUP BY company, YEAR(`date`)
+ORDER BY 3 DESC;
+
+WITH Company_Year AS
+(
+	SELECT company, YEAR(`date`) as 'years' , SUM(total_laid_off) as 'total_laid_off'
+	FROM layoffs_staging2
+	GROUP BY company, YEAR(`date`)
+), 
+Company_YEAR_Rank AS
+	(SELECT *, DENSE_RANK() OVER (PARTITION BY years ORDER BY total_laid_off DESC) AS ranking
+	FROM Company_Year
+	WHERE years IS NOT NULL)
+SELECT * FROM Company_YEAR_Rank
+WHERE ranking <=5;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
